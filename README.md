@@ -1,5 +1,7 @@
 Broker wraps Go AMQP 0.9.1 client (https://github.com/streadway/amqp) to expose an API in order to implement Event Driven Design pattern for Microservices Architecture.
 
+![Color](./broker_rabbitmq.png)
+
 # Install
 
 ```bash
