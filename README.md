@@ -34,8 +34,14 @@ func main() {
 		panic(err)
 	}
 	defer ch.Close()
-	// Publish Event
-	if err := eq.PublishEvent("foobar", "route_key", bytes.NewBufferString("hello world"), ch); err != nil { 
+	// Publish Events to RabbitMQ
+	// 
+	// Publish Event Account Created Event
+	if err := eq.PublishEvent("account.created", "users.account.created", bytes.NewBufferString("hi folks"), ch); err != nil { 
+		log.Fatal(err)
+	}
+	// Publish Event Account Deleted Event
+	if err := eq.PublishEvent("account.deleted", "users.account.deleted", bytes.NewBufferString("good bye"), ch); err != nil { 
 		log.Fatal(err)
 	}
 }
@@ -64,18 +70,19 @@ func main() {
 	defer eq.Close()
 
 	// Register Handle Events
-	eq.HandleEvent("foo", func(req *broker.Request) (*broker.Response, error) {
+	// Add Account Created handle event
+	eq.HandleEvent("account.created", func(req *broker.Request) (*broker.Response, error) {
 	    // Add your code here
 		return &broker.Response{}, nil
-	}, broker.WithQueue("foo_queue"), broker.WithRouteKey("route_key"))
-
-	eq.HandleEvent("bar", func(req *broker.Request) (*broker.Response, error) {
+	}, broker.WithQueue("accounts_created"), broker.WithRouteKey("users.account.created"))
+	// Add Account Deleted handle event
+	eq.HandleEvent("account.deleted", func(req *broker.Request) (*broker.Response, error) {
 	    // Add your code here
 		return &broker.Response{}, nil
-	}, broker.WithQueue("bar_queue"), broker.WithRouteKey("route_key"))
-
+	}, broker.WithQueue("accounts_deleted"), broker.WithRouteKey("users.account.deleted"))
 	// Exec runners for each event
 	<-eq.RunSubscribers()
+
 	log.Fatalf("rabbitmq server connection is closed %v", err)
 }
 
