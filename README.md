@@ -1,4 +1,4 @@
-Broker wraps RabbitMQ client to connect a set of queues using concurrency.
+Broker wraps Go AMQP 0.9.1 client (https://github.com/streadway/amqp) to expose an API in order to implement Event Driven Design pattern for Microservices Architecture.
 
 # Install
 
@@ -20,29 +20,28 @@ import (
 )
 
 func main() {
+	// Create Event Queue object
 	eq, err := broker.NewEventQueue("localhost", "5672", "guest", "guest")
 	if err != nil {
 		panic(err)
 	}
 	defer eq.Close()
-
+	// Open a new Channel
 	ch, err := eq.OpenChannel()
 	if err != nil {
 		panic(err)
 	}
 	defer ch.Close()
-
-	for {
-		if err := eq.PublishEvent("foobar", "route_key", bytes.NewBufferString("hello world"), ch); err != nil {
-			log.Fatal(err)
-		}
-		time.Sleep(2 * time.Second)
+	// Publish Event
+	if err := eq.PublishEvent("foobar", "route_key", bytes.NewBufferString("hello world"), ch); err != nil { 
+		log.Fatal(err)
 	}
 }
 
 ```
 
 # Subscriber Example
+Register your event handlers and create your function handler to perform a queue message.
 
 ```go
 package main
@@ -55,24 +54,27 @@ import (
 )
 
 func main() {
+	// Create Event Queue instance
 	eq, err := broker.NewEventQueue("localhost", "5672", "guest", "guest")
 	if err != nil {
 		panic(err)
 	}
 	defer eq.Close()
-	eq.HandleEvent("event_name", func(req *broker.Request) (*broker.Response, error) {
-		type message struct {
-			ID string `json:"id"`
-		}
-		m := message{}
-		if err := json.NewDecoder(req.Body).Decode(&m); err != nil {
-			return nil, err
-		}
-		return &broker.Response{}, nil
-	}, broker.WithQueue("queue_name"), broker.WithRouteKey("route_key"))
 
+	// Register Handle Events
+	eq.HandleEvent("foo", func(req *broker.Request) (*broker.Response, error) {
+	    // Add your code here
+		return &broker.Response{}, nil
+	}, broker.WithQueue("foo_queue"), broker.WithRouteKey("route_key"))
+
+	eq.HandleEvent("bar", func(req *broker.Request) (*broker.Response, error) {
+	    // Add your code here
+		return &broker.Response{}, nil
+	}, broker.WithQueue("bar_queue"), broker.WithRouteKey("route_key"))
+
+	// Exec runners for each event
 	<-eq.RunSubscribers()
 	log.Fatalf("rabbitmq server connection is closed %v", err)
 }
-```
 
+```
