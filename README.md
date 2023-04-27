@@ -50,7 +50,7 @@ func main() {
 
 ```
 
-# Subscriber Example
+# Subscribers Example
 Register your event handlers and create your function handler to perform a queue message.
 
 ```go
@@ -84,6 +84,37 @@ func main() {
 	}, broker.WithQueue("accounts_deleted"), broker.WithRouteKey("users.account.deleted"))
 	// Exec runners for each event
 	<-eq.RunSubscribers()
+
+	log.Fatalf("rabbitmq server connection is closed %v", err)
+}
+
+```
+
+# Run a Subcriber Example
+
+```go
+package main
+
+import (
+	"encoding/json"
+	"log"
+
+	"github.com/mig-elgt/broker"
+)
+
+func main() {
+	// Create Event Queue instance
+	eq, err := broker.NewEventQueue("localhost", "5672", "guest", "guest")
+	if err != nil {
+		panic(err)
+	}
+	defer eq.Close()
+
+	// Register a Handle Event and run a Subscriber
+	eq.RunSubscriber("account.created", func(req *broker.Request) (*broker.Response, error) {
+	    // Add your code here
+		return &broker.Response{}, nil
+	}, broker.WithQueue("accounts_created"), broker.WithRouteKey("users.account.created"))
 
 	log.Fatalf("rabbitmq server connection is closed %v", err)
 }
